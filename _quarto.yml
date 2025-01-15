@@ -1,5 +1,7 @@
 project:
   title: "HC_Survey"
+  type: website
+  output-dir: docs
 
 editor: visual
 
