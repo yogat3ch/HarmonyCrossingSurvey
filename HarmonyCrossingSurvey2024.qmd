@@ -1,0 +1,342 @@
+---
+title: "Harmony Crossing Vendor Survey Results"
+format: 
+  revealjs:
+    scrollable: true
+editor: visual
+execute: 
+  echo: false
+---
+
+```{r setup}
+source("HarmonyCrossingFns.R")
+library(echarts4r)
+library(htmltools)
+```
+
+```{r 'Load Results', results='hide'}
+#| output: hide 
+results <- readr::read_csv("HC_results_2025-01-07.csv", col_types = "cncccccccccccccccccccccccc")
+# Remove the final column that appears to be an artifact with the text "show in survey"
+results <- results[-length(results)]
+```
+
+```{r Munging}
+likert <- c("Very Unlikely" = 1, Unlikely = 2, Maybe = 3, Likely = 4, "Very Likely" = 5)
+likert <- list(preference = factor(names(likert), levels = names(likert)))
+l <- c("Too Few", "Just Right", "Too Many")
+likert$number <- factor(l, levels = l)
+l <- c("Dissatisfied", "Neither Satisfied nor Dissatified", "Satisfied")
+likert$satisfaction <- factor(l, levels = l)
+l <- c("No", "Yes")
+likert$yn <- factor(l, levels = l)
+```
+
+```{css}
+.text-center {
+  text-align: center;
+}
+```
+
+### All Questions {.scrollable}
+
+```{r}
+do.call(htmltools::tags$ul, names(results) |> 
+  purrr::map(htmltools::tags$li))
+```
+
+# General
+
+----
+
+##### During what months did you attend the market?
+
+```{r}
+months_attendance <- results[[1]] |> 
+  stringr::str_split(",\\s") |> 
+  unlist() |> 
+  table()
+
+attendance <- tibble::tibble(
+  Month = names(months_attendance) |>
+    stringr::str_sub(end = 3) |> 
+    UU::month_factor(label = TRUE),
+  Attendance = as.numeric(months_attendance)
+) |> 
+  dplyr::arrange(Month)
+
+q_bar(attendance, "Attendance per Month")
+```
+
+------------------------------------------------------------------------
+
+##### With the exception of December, approximately how many market days did you attend each month?
+
+```{r}
+q_hist(results[2])
+```
+
+##### Based on your experience of the 2024 market season, how likely are you to return for the 2025 market season?
+
+```{r}
+
+results["Based on your experience of the 2024 market season, how likely are you to return for the 2025 market season?"] |> 
+  d_likert_table(l = likert$preference) |> 
+  d_add_color() |> 
+  q_bar("How likely are you to return in 2025?") 
+```
+
+------------------------------------------------------------------------
+
+##### Are you satisfied with revenue received from this market?
+
+```{r}
+results["Are you satisfied with revenue received from this market?"] |> 
+  d_likert_table(l = likert$satisfaction) |>
+  d_add_color() |> 
+  q_bar("Revenue Satisfaction")
+```
+
+# Vendor and Patron Composition
+
+----
+
+##### Is the number of vendors at the market...?
+
+```{r}
+
+results["Is the number of  vendors at the market...?"] |> 
+  d_likert_table(l = likert$number) |> 
+  d_add_color() |> 
+  q_bar("Vendor Number")
+```
+
+##### Is the number of patrons at the market...?
+
+```{r}
+results["Is the number of patrons at the market...?"] |> 
+  d_likert_table(l = likert$number) |> 
+  d_add_color() |> 
+  q_bar("Patron Number")
+```
+
+##### Is the variety of products / vendors at the market...?
+
+```{r}
+results["Is the variety of products / vendors at the market...?"] |> 
+  d_likert_table(l = likert$number) |> 
+  d_add_color() |> 
+  q_bar("Vendor Variety")
+```
+
+------------------------------------------------------------------------
+
+```{r}
+results["Please rank the hours of the market in terms of the amount of traffic to your booth"] |> 
+  t_text_response()
+
+```
+
+# Hours
+
+------------------------------------------------------------------------
+
+##### If you could amend the hours of the Spring market, would you?
+
+```{r}
+results["If you could amend the hours of the Spring market, would you?"] |> 
+  d_likert_table(l = likert$yn) |> 
+  q_bar("Amend Spring Market Hours?")
+```
+
+##### 
+
+```{r}
+results["What hours would you suggest for Spring?"] |> 
+  t_text_response()
+```
+
+------------------------------------------------------------------------
+
+##### If you could amend the hours of the Fall market, would you?
+
+```{r}
+results["If you could amend the hours of the Fall market, would you?"] |> 
+  d_likert_table(l = likert$yn) |> 
+  q_bar("Amend Fall Market Hours?")
+```
+
+```{r}
+results["What hours would you suggest for Fall?"] |> 
+  t_text_response()
+```
+
+# Fees
+
+------------------------------------------------------------------------
+
+##### Would you be amenable to an increase in vendor fees for the Spring Market to fund promotional efforts?
+
+```{r}
+results["Would you be amenable to an increase in vendor fees for the Spring Market to fund promotional efforts?"] |> 
+  d_likert_table(l = likert$yn) |> 
+  q_bar("Spring Promotional Fee Increase?")
+```
+
+```{r}
+results["What is a reasonable Spring season vending fee that includes additional funding for promotional efforts (considering that the current vendor fee is $200 for the season or $20 per week)?"] |> 
+  t_text_response()
+```
+
+------------------------------------------------------------------------
+
+##### Would you be amenable to an increase in vendor fees for the Fall Market to fund promotional efforts?
+
+```{r}
+results["Would you be amenable to an increase in vendor fees for the Fall Market to fund promotional efforts?"] |> 
+  d_likert_table(l = likert$yn) |> 
+  q_bar("Fall Promotional Fee Increase?")
+```
+
+```{r}
+results["What is a reasonable Fall season vending fee that includes additional funding for promotional efforts (considering that the current vendor fee is $150 for the season or $20 per week)?"] |> 
+  t_text_response()
+```
+
+# Feedback
+
+------------------------------------------------------------------------
+
+```{r}
+results["What did you appreciate most about the 2024 season?"] |> 
+  t_text_response()
+```
+
+------------------------------------------------------------------------
+
+```{r}
+results[-9, "If you could change anything about the 2024 season, what would it be?"] |> 
+  t_text_response()
+tags$strong("Notes:")
+tags$ul(
+tags$em("One response omitted because it contained personally identifiable information.")
+)
+```
+
+------------------------------------------------------------------------
+
+```{r}
+results["Please rank the following marketing ideas in order of your sense of their importance & efficacy"] |> 
+  t_text_response()
+```
+
+------------------------------------------------------------------------
+
+```{r}
+results[-c(3,18), "Do you have any ideas for marketing that you'd like to contribute, or would you like to elaborate on how best to implement any of the ideas above?"] |> 
+  t_text_response()
+
+tags$strong("Notes:")
+tags$ul(
+  tags$li(tags$em("One response omitted because it contained personally identifiable information.")),
+  tags$li(tags$p("One response was so thoroughly filled with ideas and well formatted(likely AI generated), it merits it's own slide."))
+)
+
+
+```
+
+---
+
+##### Marketing & Outreach Strategies
+
+-   **Enhanced Social Media Campaigns**
+    -   **Vendor Spotlights:**
+        -   Feature individual vendors weekly with professional photos and short videos showcasing their products, stories, and behind-the-scenes processes.
+        -   Highlight any unique or seasonal offerings they'll bring to the market.
+    -   **Live Streams & Reels:**
+        -   Host live streams or short Instagram reels during market hours to showcase the buzz and interact with the audience online.
+        -   Include mini-interviews with shoppers or vendors.
+    -   **Interactive Content:**
+        -   Create polls, quizzes, or contests (e.g., “Guess the Mystery Produce”) to boost engagement.
+        -   Use hashtags like #HarmonyMarket or #SupportLocal.
+    -   **Event Announcements:**
+        -   Promote special market events like cooking demonstrations, children’s activities, or themed market days on social media.
+-   **Local Partnership Marketing**
+    -   **Posters in Local Businesses:**
+        -   Display posters or flyers in Harmony businesses with event details, dates, and vendor lists to reach regular customers in those establishments.
+    -   **Collaborate with Local Influencers:**
+        -   Partner with local bloggers, social media influencers, or community leaders to create buzz and invite their followers to the market.
+    -   **Cross-Promotion with Vendors:**
+        -   Encourage vendors to promote the market on their platforms with incentives like discounted booth fees or free promotion.
+    -   **Local Schools and Organizations:**
+        -   Partner with schools to host children’s activities or performances at the market.
+        -   Work with local nonprofits or clubs to co-promote the market through their newsletters and events.
+-   **Traditional Media Outreach**
+    -   **Radio Ads:**
+        -   Short, engaging spots on local stations during peak commuting hours.
+        -   Include testimonials from vendors or customers for a personal touch.
+    -   **Billboards:**
+        -   Eye-catching, simple designs near busy roads leading to Harmony.
+        -   Emphasize the local, fresh, and family-friendly atmosphere of the market.
+    -   **Local Newspapers and Magazines:**
+        -   Write articles or place ads in community newspapers or lifestyle magazines featuring the market’s impact on local producers and consumers.
+-   **On-Site Enhancements to Attract Visitors**
+    -   **Food Trucks or Coffee Vendors:**
+        -   A rotating lineup of food trucks or coffee stands to encourage people to stay longer.
+        -   Host food truck nights during extended hours for a special event feel.
+    -   **Live Music or Performances:**
+        -   Schedule local musicians, choirs, or performers to play during market hours to create a lively, family-friendly vibe.
+    -   **Interactive Activities:**
+        -   Host workshops, such as DIY flower arranging, cooking classes, or tastings using market ingredients.
+        -   Organize games or scavenger hunts for kids to bring in families.
+-   **Engaging Signage & Visuals**
+    -   **Directional Signage:**
+        -   Place signs at key intersections with clear directions to the market and details about its hours and location.
+        -   Include portable signs that vendors or volunteers can set up on market days.
+    -   **Market Branding:**
+        -   Create branded banners, flags, or tents to make the market more visually appealing and easy to locate.
+    -   **Chalkboards or Sandwich Boards:**
+        -   Use chalkboards at the entrance to highlight special events, new vendors, or promotions for that day.
+-   **Customer Incentives & Programs**
+    -   **Loyalty Program:**
+        -   Offer punch cards for regular visitors (e.g., “Visit 5 markets, get \$5 off a purchase”).
+    -   **Raffle or Giveaway:**
+        -   Host a weekly or monthly drawing for a gift basket filled with vendor products.
+    -   **Community Appreciation Day:**
+        -   Organize a day with discounts, free samples, or giveaways to thank the community for their support.
+-   **Creative Event Themes**
+    -   **Seasonal Markets:**
+        -   Host themed markets like a “Spring Plant Sale,” “Fall Harvest Festival,” or “Holiday Market” to draw seasonal crowds.
+    -   **Cooking Demonstrations:**
+        -   Partner with local chefs to prepare dishes using market ingredients.
+    -   **Farm-to-Table Dinner:**
+        -   Organize a ticketed farm-to-table event featuring vendor products to raise funds for market improvements.
+-   **Digital Outreach Beyond Social Media**
+    -   **Email Newsletter:**
+        -   Send out a well-designed weekly or monthly newsletter highlighting upcoming events, new vendors, and special promotions.
+    -   **Website Updates:**
+        -   Create or update a dedicated market website with an easy-to-navigate vendor directory, event schedule, and location info.
+    -   **Google and Yelp Listings:**
+        -   Ensure the market is listed on Google Maps and Yelp with updated hours and photos to improve visibility.
+
+# Volunteering
+
+------------------------------------------------------------------------
+
+##### Are you interested in assisting with marketing efforts?
+
+```{r}
+results["Are you interested in assisting with marketing efforts?"] |> 
+  d_likert_table(l = likert$yn) |> 
+  q_bar("Volunteer for Promotional Efforts?")
+```
+
+##### Are you interested in helping to make decisions about future markets?
+
+```{r}
+results["Are you interested in helping to make decisions about future markets?"] |> 
+  d_likert_table(l = likert$yn) |> 
+  q_bar("Participate in Decision Making?")
+```
+
+# Thank you to everyone who participated and planned the survey!
