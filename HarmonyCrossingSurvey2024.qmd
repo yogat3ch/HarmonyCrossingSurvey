@@ -133,7 +133,7 @@ results["Is the variety of products / vendors at the market...?"] |>
 
 ```{r}
 results["Please rank the hours of the market in terms of the amount of traffic to your booth"] |> 
-  t_text_response()
+  d_overall_rank()
 
 ```
 
@@ -240,22 +240,9 @@ rank_items <- c(
 )
 
 # Compute ranking sums
-ranking_sums <- results["Please rank the following marketing ideas in order of your sense of their importance & efficacy"] |>
-  na.omit() |>
-  tidyr::separate_rows(1, sep = ", ") |>
-  dplyr::mutate(Position = rep(1:13, each = 8)) |> # Because there are 13 valid obs with 8 items ranked in each
-  dplyr::group_by(Position) |>
-  dplyr::group_map(\(...) {
-    dplyr::mutate(..1, Position = dplyr::row_number())
-  }) |> 
-  dplyr::bind_rows() |> 
-  dplyr::group_by(`Please rank the following marketing ideas in order of your sense of their importance & efficacy`) |> 
-  dplyr::summarise(Total = sum(Position), .groups = "drop") |>
-  dplyr::arrange(Total) |> 
-  dplyr::mutate(`Overall Rank` = dplyr::min_rank(Total), Total = NULL)
-# Display results
-ranking_sums |> 
-  knitr::kable()
+results["Please rank the following marketing ideas in order of your sense of their importance & efficacy"] |> 
+  d_overall_rank()
+
 
 
 ```

@@ -59,6 +59,37 @@ d_likert_table <- function(d, col1 = "Answer", col2 = "Number", l) {
     d_addNA(col1 = col1, col2 = col2)
 }
 
+d_overall_rank <- function(d, sep = ", ") {
+  nm <- names(d)
+  num_na <- sum(is.na(d))
+
+
+  out <- na.omit(d)
+  l_obs <- nrow(out)
+  l_items <- out[[1]][1] |>
+    stringr::str_split(sep) |>
+    unlist() |>
+    length()
+  out <- tidyr::separate_rows(out, 1, sep = sep) |>
+    dplyr::mutate(Position = rep(1:l_obs, each = l_items)) |> # Because there are 13 valid obs with 8 items ranked in each
+    dplyr::group_by(Position) |>
+    dplyr::group_map(\(...) {
+      dplyr::mutate(..1, Position = dplyr::row_number())
+    }) |>
+    dplyr::bind_rows() |>
+    dplyr::group_by(!!rlang::sym(nm)) |>
+    dplyr::summarise(Total = sum(Position), .groups = "drop") |>
+    dplyr::arrange(Total) |>
+    dplyr::mutate(`Overall Rank` = dplyr::min_rank(Total), Total = NULL)
+
+    return(tagList(htmltools::tags$div(
+      class = "text-center",
+    knitr::kable(out, format= "html") |>
+      htmltools::HTML(),
+    htmltools::tags$em(class = "text-center", num_na, " respondents did not answer."))
+    ))
+}
+
 q_hist <- function(d, x_lab = "Days Attended", y_lab = "Frequency") {
   column_title <- names(d)
   col_sym <- rlang::sym(column_title)
